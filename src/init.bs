@@ -1,0 +1,146 @@
+"META:NAMESPACE:ams";
+
+var VERSION = "0.0.1";
+
+// конфигурация
+var config = {
+    log: {
+        name: "AMS",
+        level: 0
+    },
+    request_handler_url: "/ams"
+};
+
+// переменные окружения
+var env = {
+    base_dir_url: null,
+    dist_dir_url: null,
+
+    modules_lock_url: null,
+    data_dir_url: null,
+    modules_dir_url: null,
+
+    ams_wrapper_version: null,
+    ams_dist_version: null,
+
+    modules: {
+        lock: {}
+    }
+};
+
+// контейнер модулей
+var module = {};
+
+var log = null;
+var build = {};
+var loader = {};
+var utils = {};
+
+// холдер для функционала web
+var web = {
+    request: {},
+    response: null,
+    controller: {},
+    redirects: {} // здесь хранятся зарегистрированные редиректы
+};
+
+
+function registerStd() {
+    RegisterCodeLibrary("lib_std/std.bs");
+    std.init();
+}
+
+function initEnv(oConfig) {
+    env.base_dir_url = UrlParent(UrlParent(AbsoluteUrl("dummy")));
+    env.dist_dir_url = UrlParent(AbsoluteUrl("dummy"));
+
+    env.modules_lock_url = std.fu.resolve(env.base_dir_url, "modules.lock");
+    env.data_dir_url = std.fu.resolve(env.base_dir_url, "data");
+    env.modules_dir_url = std.fu.resolve(env.base_dir_url, "modules");
+
+    env.ams_wrapper_version = oConfig.env.AMS_WRAPPER_VERSION;
+    env.ams_dist_version = VERSION;
+
+    if (std.fu.isExistsFile(env.modules_lock_url)) {
+        try {
+            env.modules.lock = std.json.parse(std.fu.loadAsText(env.modules_lock_url));
+        } catch (err) {
+            throw "Corrupted AMS structure: modules.lock is invalid.";
+        }
+    } else {
+        env.modules.lock = {};
+        std.fu.putAsText(env.modules_lock_url, "{}");
+    }
+
+    if (std.fu.isNotExistsDir(env.data_dir_url)) {
+        std.fu.createDir(env.data_dir_url)
+    }
+
+    if (std.fu.isNotExistsDir(env.modules_dir_url)) {
+        std.fu.createDir(env.modules_dir_url)
+    }
+}
+
+function loadInternal() {
+    log = OpenCodeLib("packages/log/log.bs");
+
+    build.SetProperty("service", OpenCodeLib("packages/build/service.bs"));
+    build.SetProperty("api", OpenCodeLib("packages/build/api.bs"));
+    build.SetProperty("web", OpenCodeLib("packages/build/web.bs"));
+
+    loader.SetProperty("main", OpenCodeLib("packages/loader/main.bs"));
+    loader.SetProperty("module", OpenCodeLib("packages/loader/module.bs"));
+
+    utils.SetProperty("env", OpenCodeLib("packages/utils/env.bs"));
+    utils.SetProperty("module_config", OpenCodeLib("packages/utils/module_config.bs"));
+    utils.SetProperty("util", OpenCodeLib("packages/utils/util.bs"));
+
+    web.request.SetProperty("body", {});
+    web.request.body.SetProperty("main", OpenCodeLib("web/request/body/main.bs"));
+    web.request.body.SetProperty("application__json", OpenCodeLib("web/request/body/application__json.bs"));
+    web.request.body.SetProperty("application__x_www_form_urlencoded", OpenCodeLib("web/request/body/application__x_www_form_urlencoded.bs"));
+    web.request.body.SetProperty("multipart__form_data", OpenCodeLib("web/request/body/multipart__form_data.bs"));
+
+    web.SetProperty("response", OpenCodeLib("web/response/api.bs"));
+
+    web.SetProperty("error", OpenCodeLib("web/utils/error.bs"));
+    web.SetProperty("router", OpenCodeLib("web/utils/router.bs"));
+    web.SetProperty("util", OpenCodeLib("web/utils/util.bs"));
+
+    web.controller.SetProperty("module", OpenCodeLib("web/controllers/module/module_controller.bs"));
+    web.controller.SetProperty("module_web", OpenCodeLib("web/controllers/module/component_web_controller.bs"));
+    web.controller.SetProperty("module_api", OpenCodeLib("web/controllers/module/component_api_controller.bs"));
+}
+
+function registerWebHook() {
+    var sWebHandlerUrl = config.request_handler_url + "/*";
+    var l1Controller = OpenCodeLib("web/web_controller.bs");
+    RegisterWebUrlHandler(sWebHandlerUrl, l1Controller, "handleRequest");
+}
+
+function loadModules() {
+    var sModulesDirUrl = std.fu.resolve(env.base_dir_url, "modules");
+    var oModulesLock = env.modules.lock;
+    
+    var sModuleUrl = undefined;
+    var sModuleKey;
+    for (sModuleKey in oModulesLock) {
+        sModuleUrl = std.fu.resolve(sModulesDirUrl, sModuleKey);
+        ams.loader.main.loadModule(sModuleKey, sModuleUrl);
+    }
+}
+
+function init(oConfig) {
+    config = oConfig.dist;
+
+    registerStd();
+    initEnv(oConfig);
+    DropFormsCache(std.fu.resolve(env.base_dir_url, "*"));
+
+    loadInternal();
+    registerWebHook();
+    loadModules();
+
+    // alert(env.ams_wrapper_version)
+    // alert(env.ams_dist_version)
+}

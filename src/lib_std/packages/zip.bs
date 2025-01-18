@@ -1,0 +1,12 @@
+function create(sArchivePath, sarrFilesArray, oOptions) {
+    sArchivePath = ams.utils.require.typeString(sArchivePath);
+
+
+}
+
+function extract(sArchivePath, sDestPath) {
+    sArchivePath = ams.utils.require.typeString(sArchivePath);
+    sDestPath = ams.utils.require.typeString(sDestPath);
+
+    return ZipExtract(sArchivePath, sDestPath);
+}

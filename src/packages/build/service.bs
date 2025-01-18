@@ -1,0 +1,18 @@
+function create(sBaseUrl) {
+    return {
+        'DEBUG': "service.build." + Random(10000000, 99999999),
+        'base': sBaseUrl,
+        'structure': {}
+    }
+}
+
+function loadLib(cbuild, sLibPath, sKey) {
+    if (cbuild.structure.HasProperty(sKey)) {
+        throw "redeclare forbiden"
+    }
+
+    var sLibUrl = UrlAppendPath(cbuild.base, sLibPath);
+
+    var oCodeLib = OpenCodeLib(sLibUrl);
+    cbuild.structure.SetProperty(sKey, oCodeLib)
+}

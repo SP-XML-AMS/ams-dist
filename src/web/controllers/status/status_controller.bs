@@ -1,0 +1,4 @@
+function handle(request, reqData) {
+    request.RespContentType = "text/html";
+    request.RespStream.WriteStr(EvalCodePageUrl(std.fu.resolve(ams.env.dist_dir_url, "web/static/static.html")));
+}

@@ -1,0 +1,122 @@
+/**
+ * Метод вызывает `prepareResponse` с определёнными параметрами
+ * @param message Текст ошибки
+ * @param code Код ошибки
+ */
+function prepareError(message, code) {
+    return prepareResponse(null, message, "failed", true, code);
+}
+
+/**
+ * Метод вызывает `prepareResponse` с определёнными параметрами
+ * @param req Коробочный объект `Request`
+ * @param res Коробочный объект `Response`
+ * @param result Объект ответа
+ */
+function prepare(req, result) {
+    if (ObjectType(result) == "JsObject") {
+        return apt(req, prepareResponse(
+            result.GetOptProperty("result", null),
+            result.GetOptProperty("message", ""),
+            result.GetOptProperty("status", ""),
+            result.GetOptProperty("error", false),
+            result.GetOptProperty("code", 200)
+        ));
+    }
+    return result;
+}
+
+/**
+ * Метод формирует ответ в определённом формате и правилам
+ * @param result Результат запроса
+ * @param message Сообщение для кода или тела ответа
+ * @param status Статус запроса
+ * @param error Наличие ошибки
+ * @param code Код ответа
+ */
+function prepareResponse(result, message, status, error, code) {
+    error = tools_web.is_true(error);
+    if (tools_web.is_true(error)) {
+        status = "failure";
+    }
+    else if (IsEmptyValue(status)) {
+        status = "unknown";
+    }
+    code = OptInt(code, 200);
+    var response = {
+        code: code,
+        error: error,
+        status: status
+    };
+    // alert("message = " + message)
+    // alert("response = (" + code + ") " + EncodeJson(result))
+    if (ObjectType(result) == "JsObject" || ObjectType(result) == "JsArray" || !IsEmptyValue(result)) {
+        response.SetProperty("result", result);
+    }
+    if (!IsEmptyValue(message)) {
+        response.SetProperty("message", message);
+    }
+    return response;
+}
+
+/**
+ * Функция преобразовывает ответ в соответствии с `Content-Type`.
+ * @param Request Коробочный объект запроса {@link Request}
+ * @param Response Коробочный объект ответа {@link Response}
+ * @param response Объект ответа в формате API {@link ApiResponse}
+ */
+function apt(Request, response) {
+    var code = OptInt(response.GetOptProperty("code", 200));
+    var message = Trim(response.GetOptProperty("message", ""));
+    try {
+        if (IsEmptyValue(Request.RespContentType)) {
+            Request.RespContentType = "application/json";
+        }
+        Request.SetRespStatus(code, (message == "" ? "Unknown" : message));
+    }
+    catch (err) {
+        alert("apt error: " + err)
+    }
+    if (Request.RespContentType == "application/json") {
+        return tools.object_to_text(response, "json", 20);
+    }
+    return tools_web.is_true(response.error) ? response.message : response.result;
+}
+
+/**
+ * Функция для формирования ответа с ошибкой, который будет передан на клиент
+ * @param message Текст с дополнительной информацией
+ * @param code `HTTP Code` ответа
+ * @param result Результат
+ */
+function fail(message, code, result) {
+    if (code === void 0) { code = 500; }
+    var response = {
+        status: "failed",
+        error: true,
+        message: message,
+        result: result,
+        code: OptInt(code, 500)
+    };
+    // TODO: Добавить вывод ошибки в лог
+    return response;
+}
+
+/**
+ * Функция для формирования ответа, который будет передан на клиент
+ * @param result Результат
+ * @param code `HTTP Code` ответа
+ * @param message Текст с дополнительной информацией
+ */
+function ok(result, code, message) {
+    if (code === void 0) { code = 200; }
+    var response = {
+        status: "success",
+        error: false,
+        message: message,
+        result: result,
+        code: OptInt(code, 200)
+    };
+    // TODO: Добавить вывод ответа в лог при типе отладки debug
+    return response;
+}

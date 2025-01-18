@@ -1,0 +1,158 @@
+function from(arrLike) {
+    return ArrayDirect(arrLike);
+}
+
+function copy(arrLike) {
+    return ArraySelectAll(arrLike);
+}
+
+function length(arr) {
+    return ArrayCount(arr);
+}
+
+function map(arr, sElemExpr) {
+    arr = std.require.array(arr);
+    sElemExpr = std.require.string(sElemExpr);
+
+    return ArrayExtract(arr, sElemExpr);
+}
+
+function filter(arr, sElemCond) {
+    arr = std.require.array(arr);
+    sElemCond = std.require.string(sElemCond);
+
+    return ArraySelect(arr, sElemCond);
+}
+
+function find(arr, sElemCond) {
+    arr = std.require.array(arr);
+    sElemCond = std.require.string(sElemCond);
+
+    return ArrayOptFind(arr, sElemCond);
+}
+
+function findLast(arr, sElemCond) {
+    arr = std.require.array(arr);
+    sElemCond = std.require.string(sElemCond);
+
+    for (var i = arr.length - 1; i >= 0; i--) {
+        if (SafeEval(sElemCond, { "This": arr[i] }) === true) {
+            return arr[i];
+        }
+    }
+    
+    return undefined;
+}
+
+function findIndex(arr) {
+
+}
+
+function findLastIndex(arr) {
+
+}
+
+function flat(arr, iDepth) {
+    arr = std.require.array(arr);
+    iDepth = std.require.optInteger(iDepth, 1);
+
+    std.require.notSupportedOperation(); // ArrayExpand()
+}
+
+function includes(arr, dyVal) {
+    arr = std.require.array(arr);
+
+    return 
+}
+
+function indexOf(arr, dyElem) {
+    arr = std.require.jsArray(arr);
+
+    return arr.indexOf(dyElem)
+}
+
+function lastIndexOf(arr, dyElem) {
+    arr = std.require.jsArray(arr);
+
+    for (var i = arr.length - 1; i >= 0; i--) {
+        if (arr[i] === dyElem) {
+            return arr[i];
+        }
+    }
+}
+
+function join(arr, sElemExpr, sDelim) {
+    arr = std.require.array(arr);
+    sElemExpr = std.require.string(sElemExpr);
+    sDelim = std.require.string(sDelim);
+
+    return ArrayMerge(arr, sElemExpr, sDelim);
+}
+
+function pop() {
+    
+}
+
+function shift() {
+
+}
+
+function unshift() {
+
+}
+
+function push() {
+
+}
+
+function reduce() {
+
+}
+
+function reduceRight() {
+
+}
+
+function reverse() {
+
+}
+
+function toReversed() {
+
+}
+
+function slice() {
+
+}
+
+function sort(arr, sElemExpr, sOrder) {
+    arr = std.require.array(arr);
+    sElemExpr = std.require.string(sElemExpr);
+    sOrder = std.require.optString(sOrder, "+");
+
+    std.require.notSupportedOperation();
+}
+
+function toSorted(arr, sElemExpr, sOrder) {
+    arr = std.require.array(arr);
+    sElemExpr = std.require.string(sElemExpr);
+    sOrder = std.require.optString(sOrder, "+");
+
+    return ArraySort(arr, sElemExpr, sOrder);
+}
+
+function splice() {
+
+}
+
+function toSpliced() {
+
+}
+
+function every() {
+
+}
+
+function some() {
+
+}

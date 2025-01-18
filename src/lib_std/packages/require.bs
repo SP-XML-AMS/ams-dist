@@ -1,0 +1,99 @@
+function type(value, sType) {
+    if (DataType(sType) !== "string") {
+        throw "Invalid type."
+    }
+
+    if (DataType(value) !== sType) {
+        throw "ASSERT CHECK: Type mismatch with value: expected '" + sType + "', actual '" + DataType(value) + "'.";
+    }
+
+    return value;
+}
+
+function typeOptional(value, sType, defaultValue) {
+    if (DataType(sType) !== "string") {
+        throw "Invalid type."
+    }
+
+    if (defaultValue !== undefined && defaultValue !== null) {
+        if (DataType(defaultValue) !== sType) {
+            throw "ASSERT CHECK: Type mismatch with DEFAULT value: expected '" + sType + "', actual '" + DataType(defaultValue) + "'.";
+        }
+    
+        if (value === undefined || value === null) {
+            return defaultValue;
+        }
+    }
+
+    if (DataType(value) !== sType) {
+        throw "ASSERT CHECK: Type mismatch with value: expected '" + sType + "', actual '" + DataType(value) + "'.";
+    }
+
+    return value;
+}
+
+function objectType(value, sType) {
+    if (DataType(sType) !== "string") {
+        throw "Invalid type."
+    }
+
+    if (ObjectType(value) !== sType) {
+        var sActualType = ObjectType(value);
+        if (sActualType === "") {
+            sActualType = DataType(value);
+        }
+        throw "ASSERT CHECK: Type mismatch with value: expected '" + sType + "', actual '" + sActualType + "'.";
+    }
+
+    return value;
+}
+
+function objectTypeOptional(value, sType, defaultValue) {
+    if (DataType(sType) !== "string") {
+        throw "Invalid type."
+    }
+
+    if (value !== undefined && value !== null) {
+        if (ObjectType(defaultValue) !== sType) {
+            var sActualType = ObjectType(defaultValue);
+            if (sActualType === "") {
+                sActualType = DataType(defaultValue);
+            }
+            throw "ASSERT CHECK: Type mismatch with DEFAULT value: expected '" + sType + "', actual '" + sActualType + "'.";
+        }
+    
+        if (value === undefined || value === null) {
+            return defaultValue;
+        }
+    }
+
+    if (ObjectType(value) !== sType) {
+        var sActualType = ObjectType(value);
+        if (sActualType === "") {
+            sActualType = DataType(value);
+        }
+        throw "ASSERT CHECK: Type mismatch with value: expected '" + sType + "', actual '" + sActualType + "'.";
+    }
+
+    return value;
+}
+
+function string(value) {
+    return type(value, "string");
+}
+
+function optString(value, defaultValue) {
+    return typeOptional(value, "string", defaultValue);
+}
+
+function integer(value) {
+    return type(value, "integer");
+}
+
+function optInteger(value, defaultValue) {
+    return typeOptional(value, "integer", defaultValue);
+}
+
+function jsArray(value) {
+    return objectType(value, "JsArray");
+}

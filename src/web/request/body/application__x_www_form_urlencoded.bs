@@ -1,0 +1,3 @@
+function parse(request) {
+    return UrlQuery("?" + request.Body);
+}

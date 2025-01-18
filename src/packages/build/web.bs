@@ -1,0 +1,24 @@
+function create(sBaseUrl) {
+    return {
+        'DEBUG': "web.build." + Random(10000000, 99999999),
+        'base': sBaseUrl,
+        'config': {}
+    }
+}
+
+function injectBaseUrl(cbuild, flag) {
+    flag = tools_web.is_true(flag);
+    
+    cbuild.config.SetProperty("injectBaseUrl", flag);
+}
+
+function spaMode(cbuild, flag) {
+    flag = tools_web.is_true(flag);
+    
+    cbuild.config.SetProperty("sapMode", flag);
+}
+
+function rootDir(cbuild, sRootDir) {
+    var sWebRootDir = UrlAppendPath(cbuild.base, sRootDir);
+    cbuild.config.SetProperty("rootDir", sWebRootDir);
+}

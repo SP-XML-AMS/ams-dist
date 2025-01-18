@@ -1,0 +1,21 @@
+function asBool(dyVal) {
+    return dyVal == true || dyVal == 'true' || dyVal == 1 || dyVal == '1' || dyVal == 'on';
+}
+
+
+function asInteger(dyVal) {
+    return Int(dyVal);
+}
+
+function asOptInteger(dyVal) {
+    return OptInt(dyVal);
+}
+
+
+function asReal(dyVal) {
+    return Real(dyVal);
+}
+
+function asOptReal(dyVal) {
+    return OptReal(dyVal);
+}

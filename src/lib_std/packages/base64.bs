@@ -1,0 +1,7 @@
+function encode(sData) {
+    return Base64Encode(sData);
+}
+
+function decode(sData) {
+    return Base64Decode(sData);
+}

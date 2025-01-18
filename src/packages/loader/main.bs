@@ -1,0 +1,71 @@
+function installModule(sArchiveUrl) {
+    var sTempPath = std.fp.obtainTempDir();
+    std.zip.extract(sArchiveUrl, sTempPath);
+    var sarrFilePaths = std.fp.readDir(sTempPath);
+
+    var sModuleTempPath = std.array.first(sarrFilePaths);
+    std.require.assert(std.fp.isExistsDir(sModuleTempPath), "Module dir not found.");
+    var sModuleName = ams.fp.fileName(sModuleTempPath);
+    var sModuleDestPath = ams.fp.resolve(ams.env.paths.modules, sModuleName);
+
+    std.fp.copy(sModuleTempPath, sModuleDestPath);
+    var sModuleUrl = ams.fu.pathToUrl(sModuleDestPath);
+
+    ams.loader.main.loadModule(sModuleUrl, sModuleName, ams.module);
+    var oModuleContext = ams.loader.main.getModule(sModuleName);
+
+    ams.loader.module.callOnInstall(oModuleContext);
+    ams.loader.module.lock(oModuleContext);
+}
+
+function uninstallModule(sModuleName) {
+    var oModuleContext = ams.loader.main.getModule(sModuleName);
+
+    ams.loader.module.callOnUninstall(oModuleContext);
+    ams.loader.module.unlock(oModuleContext);
+
+    ams.loader.main.unloadModule(sModuleName, ams.module);
+}
+
+function loadModule(sModuleKey, sModuleUrl, oContainer) {
+    if (oContainer === undefined) {
+        oContainer = ams.module;
+    }
+
+    try {
+        ams.log.info("module({1}) from '{2}' registering...", [sModuleKey, sModuleUrl]);
+
+        var oModuleContext = ams.loader.module.createContext(sModuleUrl, sModuleKey);
+    
+        ams.loader.module.open(oModuleContext);
+    
+        ams.loader.module.loadServiceComponent(oModuleContext);
+        ams.loader.module.loadApiComponent(oModuleContext);
+        ams.loader.module.loadWebComponent(oModuleContext);
+
+        ams.loader.module.callOnInit(oModuleContext);
+    
+        oContainer.SetProperty(sModuleKey, oModuleContext);
+
+        ams.log.info("module({1}) successfully registered.", [sModuleKey]);
+    } catch (err) {
+        ams.log.error("module({1}) could not be registered due to an error: {2}", [sModuleKey, err]);
+    }
+}
+
+function unloadModule(sModuleName, oContainer) {
+    if (oContainer === undefined) {
+        oContainer = ams.module;
+    }
+
+    oContainer.SetProperty(sModuleName, undefined);
+}
+
+
+function getModule(sModuleName) {
+    var module = ams.module.GetOptProperty(sModuleName);
+    if (module === undefined) {
+        throw "Module not provided.";
+    }
+    return module;
+}

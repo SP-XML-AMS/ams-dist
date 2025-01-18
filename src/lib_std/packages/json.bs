@@ -1,0 +1,7 @@
+function encode(value) {
+    return EncodeJson(value);
+}
+
+function parse(value) {
+    return ParseJson(value);
+}

@@ -1,0 +1,65 @@
+function abs(x) {
+    if (x < 0) {
+        return -x;
+    } else {
+        return x;
+    }
+}
+
+// 1. Реализация ceil (округление вверх)
+function ceil(x) {
+    if (x < 0) {
+        return -(Math.round(-x) > -x ? Math.round(-x) - 1 : Math.round(-x));
+    }
+    return Math.round(x) < x ? Math.round(x) + 1 : Math.round(x);
+}
+
+// 2. Реализация floor (округление вниз)
+function floor(x) {
+    if (x < 0) {
+        return -(Math.round(-x) < -x ? Math.round(-x) + 1 : Math.round(-x));
+    }
+    return Math.round(x) > x ? Math.round(x) - 1 : Math.round(x);
+}
+
+// 3. Реализация round (округление по правилам математики)
+function round(x) {
+    if (x < 0) {
+        return -Math.round(-x);
+    }
+    return Math.round(x);
+}
+
+// 4. Реализация trunc (усечение дробной части)
+function trunc(x) {
+    if (x < 0) {
+        return -(Math.round(-x) > -x ? Math.round(-x) - 1 : Math.round(-x));
+    }
+    return Math.round(x) > x ? Math.round(x) - 1 : Math.round(x);
+}
+
+function pow() {
+
+}
+
+function sqrt() {
+    
+}
+
+function asStr(x) {
+    if (x < 0) {
+        return ("-" + (-x))
+    } else {
+        return ("" + x)
+    }
+}
+
+// MESSAGE = (asStr(ceil(4.2)) + " | " + asStr(ceil(4.8)) + " | " + asStr(ceil(-4.2)) + " | " + asStr(ceil(-4.8)))
+// MESSAGE += '\n' + (asStr(floor(4.2)) + " | " + asStr(floor(4.8)) + " | " + asStr(floor(-4.2)) + " | " + asStr(floor(-4.8)))
+// MESSAGE += '\n' + (asStr(round(4.2)) + " | " + asStr(round(4.8)) + " | " + asStr(round(-4.2)) + " | " + asStr(round(-4.8)))
+// MESSAGE += '\n' + (asStr(trunc(4.2)) + " | " + asStr(trunc(4.8)) + " | " + asStr(trunc(-4.2)) + " | " + asStr(trunc(-4.8)))
+
+// 5 | 5 | -4 | -4
+// 4 | 4 | -5 | -5
+// 4 | 5 | -4 | -5
+// 4 | 4 | -4 | -4

@@ -1,0 +1,7 @@
+function str_trim() {
+    var expected = "tex t";
+    var actual = std.trim("   tex t \n ");
+
+    tester.assert(StrEquals(expected, actual))
+}
+

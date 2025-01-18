@@ -1,0 +1,34 @@
+function handle(request, reqData) {
+    if (reqData.parts.length < 3) {
+        ams.web.error.respondWithMessage("Unknown module location: '{1}'.", [reqData.path], 404);
+    }
+    
+    var sModuleName = reqData.parts[1];
+    var sComponent = reqData.parts[2];
+
+    var curModule = ams.module.GetOptProperty(sModuleName);
+    if (curModule === undefined) {
+        ams.web.error.respondWithMessage("Module '{1}' not found.", [sModuleName], 404);
+    }
+
+    var sPrefixUrlPath = ArrayMerge(ArrayRange(reqData.parts, 0, 3), "This", "/");
+    var sVirtualUrlPath = StrCharRangePos(reqData.path, StrLen(sPrefixUrlPath), StrLen(reqData.path));
+
+    reqData.SetProperty("curModule", curModule);
+    reqData.SetProperty("sModuleName", sModuleName);
+    reqData.SetProperty("sComponent", sComponent);
+    reqData.SetProperty("sPrefixUrlPath", sPrefixUrlPath);
+    reqData.SetProperty("sVirtualUrlPath", sVirtualUrlPath);
+
+    if (sComponent === "web") {
+        ams.web.controller.module_web.handle(request, reqData);
+        return;
+    }
+
+    if (sComponent === "api") {
+        ams.web.controller.module_api.handle(request, reqData);
+        return;
+    }
+
+    ams.web.error.respondWithMessage("Unknown module component: '{1}'.", [sComponent], 404);
+}

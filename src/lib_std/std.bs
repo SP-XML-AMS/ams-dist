@@ -1,0 +1,31 @@
+"META:NAMESPACE:std";
+
+var array = null;
+var base64 = null;
+var cast = null;
+var date = null;
+var error = null;
+var fp = null;
+var fu = null;
+var json = null;
+var math = null;
+var require = null;
+var str = null;
+var url = null;
+var zip = null;
+
+function init() {
+    array = OpenCodeLib("packages/array.bs");
+    base64 = OpenCodeLib("packages/base64.bs");
+    cast = OpenCodeLib("packages/cast.bs");
+    date = OpenCodeLib("packages/date.bs");
+    error = OpenCodeLib("packages/error.bs");
+    fp = OpenCodeLib("packages/fp.bs");
+    fu = OpenCodeLib("packages/fu.bs");
+    json = OpenCodeLib("packages/json.bs");
+    math = OpenCodeLib("packages/math.bs");
+    require = OpenCodeLib("packages/require.bs");
+    str = OpenCodeLib("packages/str.bs");
+    url = OpenCodeLib("packages/url.bs");
+    zip = OpenCodeLib("packages/zip.bs");
+}

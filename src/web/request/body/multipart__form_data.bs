@@ -1,0 +1,115 @@
+function parse(request) {
+    var contentType = request.Header.GetProperty("Content-Type");
+
+    var boundary = splitHeaderValue(contentType).GetOptProperty("boundary", null);
+    if (boundary === null) {
+        throw "Invalid boundary provided.";
+    }
+
+
+    var form = {};
+
+    var parts = request.Body.split("--" + boundary);
+    var part;
+    for (part in parts) {
+        parsePart(part, form);
+    }
+
+    return form;
+}
+
+function splitHeaderValue(value) {
+    var data = {};
+
+    function handlePair(pair) {
+        pair = Trim(pair);
+        var parts = pair.split("=");
+
+        if (ArrayCount(parts) === 1) {
+            data.SetProperty("Value", Trim(parts[0]));
+        } else if (ArrayCount(parts) === 2) {
+            data.SetProperty(Trim(parts[0]), Trim(parts[1]));
+        } else {
+            throw "Invalid format.";
+        }
+    }
+
+    var pairs = value.split(";");
+    var pair;
+    for (pair in pairs) {
+        handlePair(pair);
+    }
+
+    return data;
+}
+
+function parsePart(part, form) {
+    if (part === '' || part === '--\r\n' || part === "--") {
+        return;
+    }
+    alert("rawPart1 = " + EncodeJson(part))
+    part = partTrim(part);
+    alert("rawPart2 = " + EncodeJson(part))
+
+    var contentParts = part.split('\r\n\r\n');
+    var rawHeaders = contentParts[0];
+
+    var headers = parseRawHeaders(rawHeaders);
+    var content = StrRangePos(part, (StrLen(rawHeaders) + StrLen('\r\n\r\n')), StrLen(part));
+    alert("content = " + EncodeJson(content))
+
+    parsePartContent(headers, content, form);
+}
+
+function partTrim(part) {
+    if (StrBegins(part, '\r\n')) {
+        part = StrRangePos(part, 2, StrLen(part))
+    }
+    if (StrEnds(part, '\r\n')) {
+        part = StrRangePos(part, 0, (StrLen(part) - StrLen('\r\n')))
+    }
+    return part;
+}
+
+function parseRawHeaders(rawHeaders) {
+    var oHeaders = {};
+
+    var sarrRawHeaders = rawHeaders.split('\r\n');
+    alert("sarrRawHeaders = " + EncodeJson(sarrRawHeaders))
+    var sRawHeader;
+    for (sRawHeader in sarrRawHeaders) {
+        parseHeaderLine(sRawHeader, oHeaders)
+    }
+
+    return oHeaders;
+}
+
+function parseHeaderLine(sRawHeader, oHeaders) {
+    alert("sRawHeader = " + sRawHeader)
+    var parts = sRawHeader.split(":");
+    var sKey = parts[0];
+    var sValue = parts[1];
+    var oValue = splitHeaderValue(sValue);
+    oHeaders.SetProperty(sKey, oValue);
+}
+
+function parsePartContent(headers, content, form) {
+    var contentDisposition = headers.GetOptProperty("Content-Disposition");
+    if (contentDisposition === undefined) {
+        throw "Invalid headers"
+    }
+
+    var name = contentDisposition.GetOptProperty("name");
+    var filename = contentDisposition.GetOptProperty("filename");
+    if (name === undefined) {
+        throw "Invalid headers"
+    }
+    name = StrCharRangePos(name, 1, (StrCharCount(name) - 1));
+
+    if (filename === undefined) {
+        form.SetProperty(name, content);
+    } else {
+        filename = StrCharRangePos(filename, 1, (StrCharCount(filename) - 1));
+        form.SetProperty(name, { "filename": filename, "content": content });
+    }
+}
