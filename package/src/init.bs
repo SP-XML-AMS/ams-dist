@@ -1,0 +1,103 @@
+var VERSION = "0.0.2";
+var FILE_URL = UrlParent(AbsoluteUrl("au"));
+
+// конфигурация
+var config = {
+    log: {
+        name: "AMS",
+        level: 0
+    },
+    request_handler_url: "/ams"
+};
+
+var log = null;
+var env = null;
+var loader = null;
+var utils = null;
+var build = null;
+
+var web = {
+    request: {},
+    response: null,
+    controller: {},
+    redirects: {} // здесь хранятся зарегистрированные редиректы
+};
+
+var module = SafeObject();
+
+function loadStd() {
+    ams.libloader.loadLib(AbsoluteUrl("lib_std/std.bs"), "std");
+    std.lib.init();
+}
+
+function loadMain() {
+    log = OpenCodeLibrary("main/log/log.bs")
+    log.init();
+
+    env = OpenCodeLibrary("main/env/env.bs")
+    env.init();
+
+    loader = OpenCodeLibrary("main/loader/loader.bs")
+    loader.init();
+
+    utils = OpenCodeLibrary("main/utils/utils.bs")
+    utils.init();
+
+    build = {}
+    build.SetProperty("api", OpenCodeLib("main/build/api.bs"));
+    build.SetProperty("service", OpenCodeLib("main/build/service.bs"));
+    build.SetProperty("web", OpenCodeLib("main/build/web.bs"));
+
+
+    web.request.SetProperty("body", {});
+    web.request.body.SetProperty("main", OpenCodeLib("main/web/request/body/main.bs"));
+    web.request.body.SetProperty("application__json", OpenCodeLib("main/web/request/body/application__json.bs"));
+    web.request.body.SetProperty("application__x_www_form_urlencoded", OpenCodeLib("main/web/request/body/application__x_www_form_urlencoded.bs"));
+    web.request.body.SetProperty("multipart__form_data", OpenCodeLib("main/web/request/body/multipart__form_data.bs"));
+
+    web.SetProperty("response", OpenCodeLib("main/web/response/api.bs"));
+
+    web.SetProperty("error", OpenCodeLib("main/web/utils/error.bs"));
+    web.SetProperty("router", OpenCodeLib("main/web/utils/router.bs"));
+    web.SetProperty("util", OpenCodeLib("main/web/utils/util.bs"));
+
+    web.controller.SetProperty("main", OpenCodeLib("main/web/controllers/main_controller.bs"));
+    web.controller.SetProperty("module", OpenCodeLib("main/web/controllers/module/module_controller.bs"));
+    web.controller.SetProperty("module_web", OpenCodeLib("main/web/controllers/module/component_web_controller.bs"));
+    web.controller.SetProperty("module_api", OpenCodeLib("main/web/controllers/module/component_api_controller.bs"));
+}
+
+function loadWeb() {
+    var webLib = OpenCodeLibrary("web/web.bs");
+    ams.libloader.assignWeb(webLib);
+    ams.web.init();
+}
+
+function registerWebHook() {
+    var sWebHandlerUrl = config.request_handler_url + "/*";
+    var l1Controller = OpenCodeLib("main/web/web_controller.bs");
+    RegisterWebUrlHandler(sWebHandlerUrl, l1Controller, "handleRequest");
+}
+
+function loadModules() {
+    var sModulesDirUrl = std.lib.fu.resolve(env.base_dir_url, "modules");
+    var oarrModulesLock = env.packages.module.getAll();
+    
+    var sModuleUrl = undefined;
+    var oModuleInfo;
+    for (oModuleInfo in oarrModulesLock) {
+        sModuleUrl = std.lib.fu.resolve(sModulesDirUrl, oModuleInfo.id);
+        ams.dist.loader.loadModule(oModuleInfo.id, sModuleUrl);
+    }
+}
+
+function init(oConfig) {
+    config = oConfig.dist;
+
+    loadStd();
+    loadMain();
+    loadWeb();
+
+    registerWebHook();
+    loadModules();
+}

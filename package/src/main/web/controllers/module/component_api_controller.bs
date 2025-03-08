@@ -1,0 +1,44 @@
+function handle(request, reqData) {
+    var curModuleApi = reqData.curModule.GetOptProperty("api");
+    if (curModuleApi === undefined) {
+        ams.dist.web.error.respondWithMessage("module({1})::api component not provided.", [reqData.sModuleName], 404);
+    }
+
+    var oMatch = ams.dist.web.router.matchRoute(curModuleApi.endpoints, reqData.sVirtualUrlPath, request.Method);
+    if (oMatch === null) {
+        throw ("Unknown api endpoint: " + request.Method + "  " + reqData.sVirtualUrlPath);
+    }
+
+    try {
+        var apiCall = ams.dist.web.router.composeCall(oMatch.oHandler, request, oMatch.oParams);
+
+        if (apiCall.HasProperty("errors.validation")) {
+            var oarrErrors = apiCall.GetProperty("errors.validation");
+            var oHandlerResult = ams.dist.web.response.fail("Bad request", 400, oarrErrors)
+        } else {
+            var oHandlerResult = ams.dist.web.router.callHandler(oMatch.oHandler, apiCall);
+        }
+
+        request.AddRespHeader("Access-Control-Allow-Origin", "*", true);
+
+        request.RespContentType = "application/json";
+        var content = ams.dist.web.response.prepare(
+            request,
+            oHandlerResult
+        )
+        request.RespStream.WriteStr(
+            content
+        );
+    } catch (err) {
+        alert(err)
+
+        request.RespContentType = "application/json";
+        var content = ams.dist.web.response.apt(
+            request,
+            ams.dist.web.response.prepareError("Unknow error: " + UserError(err.message), 500)
+        )
+        request.RespStream.WriteStr(
+            content
+        );
+    }
+}

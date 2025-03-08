@@ -1,0 +1,36 @@
+var oarrLibraryDetails = [];
+
+// TODO type checks
+function loadLibrary(sFileUrl, sNamespace, bCallInit, arrInitArgs) {
+    oarrLibraryDetails.push({
+        "sFileUrl": sFileUrl,
+        "sNamespace": sNamespace,
+        "bCallInit": bCallInit,
+        "arrInitArgs": arrInitArgs
+    });
+}
+
+function __execute__(oModuleContext, sComponentDirUrl) {
+    var oLibraryResult = {}
+
+    function _loadLibrary(oLibraryDetail) {
+        var sComponentMainUrl = std.lib.fu.resolve(sComponentDirUrl, "main");
+        var sFileAbsoluteUrl = std.lib.fu.resolve(sComponentMainUrl, oLibraryDetail.sFileUrl);
+        ams.libloader.loadLib(sFileAbsoluteUrl, oLibraryDetail.sNamespace);
+        if (oLibraryDetail.bCallInit) {
+            var lib = eval(oLibraryDetail.sNamespace + ".lib");
+            CallObjectMethod(lib, "__init__", oLibraryDetail.arrInitArgs);
+        }
+        sarrResult.push(oLibraryDetail.sNamespace)
+    }
+
+    var sarrResult = [];
+    oLibraryResult.SetProperty("index", sarrResult)
+
+    var oLibraryDetail;
+    for (oLibraryDetail in oarrLibraryDetails) {
+        _loadLibrary(oLibraryDetail)
+    }
+
+    oModuleContext.SetProperty("library", oLibraryResult);
+}

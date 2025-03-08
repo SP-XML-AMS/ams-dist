@@ -1,0 +1,39 @@
+function write(value, subs, sLevelName, iLevelValue) {
+    if (iLevelValue > ams.dist.config.log.level) {
+        if (ObjectType(subs) === "JsArray") {
+            value = std.lib.str.format(value, subs)
+        }
+        
+        LogEvent(ams.dist.config.log.name, (sLevelName + value));
+        alert(sLevelName + "[" + ams.dist.config.log.name + "]  " + value)
+    }
+}
+
+
+function trace(value, subs) {
+    write(value, subs, "TRACE  ", 1);
+}
+
+function debug(value, subs) {
+    write(value, subs, "DEBUG  ", 2);
+}
+
+function info(value, subs) {
+    write(value, subs, "INFO   ", 3);
+}
+
+function warn(value, subs) {
+    write(value, subs, "WARN   ", 4);
+}
+
+function error(value, subs) {
+    write(value, subs, "ERROR  ", 5);
+}
+
+function fatal(value, subs) {
+    write(value, subs, "FATAL  ", 6);
+}
+
+function init() {
+
+}

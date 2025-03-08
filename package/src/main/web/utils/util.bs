@@ -1,0 +1,8 @@
+function registerRedirect(sFromUrlPath, sToUrlPath) {
+    alert("register redirect from '" + sFromUrlPath + "' to '" + sToUrlPath)
+    var sWebHandlerUrl = sFromUrlPath;
+    var l1Controller = OpenCodeLib(std.lib.fu.resolve(ams.dist.env.dist_dir_url, "main/web/web_controller.bs"));
+
+    RegisterWebUrlHandler(sWebHandlerUrl, l1Controller, "handleRedirect");
+    ams.dist.web.redirects.SetProperty(sFromUrlPath, sToUrlPath)
+}

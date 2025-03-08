@@ -1,0 +1,29 @@
+var array = null;
+var base64 = null;
+var cast = null;
+var date = null;
+var error = null;
+var fp = null;
+var fu = null;
+var json = null;
+var math = null;
+var require = null;
+var str = null;
+var url = null;
+var zip = null;
+
+function init() {
+    array = OpenCodeLibrary("main/array.bs");
+    base64 = OpenCodeLibrary("main/base64.bs");
+    cast = OpenCodeLibrary("main/cast.bs");
+    date = OpenCodeLibrary("main/date.bs");
+    error = OpenCodeLibrary("main/error.bs");
+    fp = OpenCodeLibrary("main/fp.bs");
+    fu = OpenCodeLibrary("main/fu.bs");
+    json = OpenCodeLibrary("main/json.bs");
+    math = OpenCodeLibrary("main/math.bs");
+    require = OpenCodeLibrary("main/require.bs");
+    str = OpenCodeLibrary("main/str.bs");
+    url = OpenCodeLibrary("main/url.bs");
+    zip = OpenCodeLibrary("main/zip.bs");
+}

@@ -1,0 +1,159 @@
+function workingDir() {
+    return UrlParent(AbsoluteUrl("dummy"));
+}
+
+function parentDir(sPath) {
+    return UrlParent(sPath);
+}
+
+function obtainTempDir() {
+    return FilePathToUrl(ObtainTempDirectoryPath());
+}
+
+function obtainTempFile(sSuffix) {
+    sSuffix = std.lib.require.optString(sSuffix, undefined);
+
+    if (sSuffix === undefined) {
+        return ObtainTempFile();
+    } else {
+        return ObtainTempFile(sSuffix);
+    }
+}
+
+function obtainSessionTempFile(sSuffix) {
+    sSuffix = std.lib.require.optString(sSuffix, undefined);
+
+    if (sSuffix === undefined) {
+        return ObtainSessionTempFile();
+    } else {
+        return ObtainSessionTempFile(sSuffix);
+    }
+}
+
+function resolve(sBasePath, sPath) {
+    sBasePath = std.lib.require.string(sBasePath);
+    sPath = std.lib.require.string(sPath);
+
+    return UrlAppendPath(sBasePath, sPath);
+}
+
+function isExists(sPath) {
+    sPath = std.lib.require.string(sPath);
+
+    return FilePathExists(UrlToFilePath(sPath));
+}
+
+function isNotExists(sPath) {
+    sPath = std.lib.require.string(sPath);
+
+    return !isExists(sPath);
+}
+
+function isExistsFile(sPath) {
+    sPath = std.lib.require.string(sPath);
+
+    return isExists(sPath) && !IsDirectory(sPath);
+}
+
+function isNotExistsFile(sPath) {
+    sPath = std.lib.require.string(sPath);
+
+    return !(isExists(sPath) && !IsDirectory(sPath));
+}
+
+function isExistsDir(sPath) {
+    sPath = std.lib.require.string(sPath);
+
+    return isExists(sPath) && IsDirectory(sPath);
+}
+
+function isNotExistsDir(sPath) {
+    sPath = std.lib.require.string(sPath);
+
+    return !(isExists(sPath) && IsDirectory(sPath));
+}
+
+function loadAsData(sPath) { // TODO: range
+    sPath = std.lib.require.string(sPath);
+
+    return LoadUrlData(sPath);
+}
+
+function loadAsText(sPath) {
+    sPath = std.lib.require.string(sPath);
+
+    return LoadUrlText(sPath);
+}
+
+function putAsData(sPath) { // TODO: range
+    sPath = std.lib.require.string(sPath);
+
+    return PutUrlData(sPath);
+}
+
+function putAsText(sPath, sText) {
+    sPath = std.lib.require.string(sPath);
+    sText = std.lib.require.string(sText);
+
+    return PutUrlText(sPath, sText);
+}
+
+function fileName(sPath) {
+    sPath = std.lib.require.string(sPath);
+
+    return UrlFileName(sPath);
+}
+
+function fileBaseName(sPath) {
+    sPath = std.lib.require.string(sPath);
+
+    var fileName = UrlFileName(sPath);
+    var fileExtension = UrlPathSuffix(sPath);
+    var fileBaseNameLen = std.lib.str.len(fileName) - std.lib.str.len(fileExtension);
+
+    return std.lib.str.substrLeft(fileName, fileBaseNameLen);
+}
+
+function fileExtension(sPath) {
+    sPath = std.lib.require.string(sPath);
+
+    return UrlPathSuffix(sPath);
+}
+
+function readDir(sDirPath) {
+    sDirPath = std.lib.require.string(sDirPath);
+
+    return ReadDirectory(sDirPath);
+}
+
+function copy(sSrcPath, sDstPath) {
+    sSrcPath = std.lib.require.string(sSrcPath);
+    sDstPath = std.lib.require.string(sDstPath);
+
+    sSrcPath_path = UrlToFilePath(sSrcPath);
+    sDstPath_path = UrlToFilePath(sDstPath);
+
+    std.lib.fp.copy(sSrcPath_path, sDstPath_path);
+}
+
+function move(sSrcPath, sDstPath) {
+    sSrcPath = std.lib.require.string(sSrcPath);
+    sDstPath = std.lib.require.string(sDstPath);
+
+    sSrcPath_path = UrlToFilePath(sSrcPath);
+    sDstPath_path = UrlToFilePath(sDstPath);
+
+    MoveFile(sSrcPath_path, sDstPath_path);
+}
+
+function pathToUrl(sPath) {
+    sPath = std.lib.require.string(sPath);
+
+    return FilePathToUrl(sPath);
+}
+
+function createDir(sPath) {
+    sPath = std.lib.require.string(sPath);
+    
+    CreateDirectory(sPath)
+}

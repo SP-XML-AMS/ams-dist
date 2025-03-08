@@ -1,0 +1,237 @@
+function createContext(sModuleUrl, sModuleKey) {
+    return {
+        "meta": {
+            // ключ модуля (название корневой директории)
+            "module_key": sModuleKey,
+            // абсолютный путь к корневой директории модуля
+            "module_url": sModuleUrl,
+            // module.bs открытый через OpenCodeLibrary()
+            "module_library": null,
+        }
+    };
+}
+
+function open(oModuleContext) {
+    function loadModuleMain(oModuleContext) {
+        var sModuleMainUrl = std.lib.fu.resolve(oModuleContext.meta.module_url, "module.bs");
+        // alert(sModuleMainUrl)
+        // TODO: проверка директории на существование
+        if (std.lib.fu.isNotExistsFile(sModuleMainUrl)) {
+            ams.dist.log.error("missing module.bs file", null);
+            throw "Corupt module structure";
+        }
+    
+        var l1ModuleMain = ams.dist.utils.safeOpenCodeLib(sModuleMainUrl);
+        if (l1ModuleMain === undefined) {
+            ams.dist.log.error("invalid module.bs file", null);
+            throw "Corupt module structure";
+        }
+    
+        return l1ModuleMain;
+    }
+
+    function readConfig(oModuleContext) {
+        var sConfigMethodName = "config";
+    
+        if (ams.dist.utils.objectNotHasMethod(oModuleContext.meta.module_library, sConfigMethodName)) {
+            ams.dist.log.error("module.bs has no {1}() method", [sConfigMethodName]);
+            throw "Corupt module structure";
+        }
+    
+        try {
+            var oModuleConfig = CallObjectMethod(oModuleContext.meta.module_library, sConfigMethodName, []);
+        } catch (err) {
+            ams.dist.log.error("cannot call {1}() method: {2}", [sConfigMethodName, err]);
+            throw "Corupt module structure";
+        }
+    
+        ams.dist.log.debug("info loaded { Name = {1}; Version = {2} }", [oModuleConfig.name, oModuleConfig.version]);
+    
+        return oModuleConfig;
+    }
+
+    var l1ModuleMain = loadModuleMain(oModuleContext);
+    oModuleContext.meta.SetProperty("module_library", l1ModuleMain);
+
+    var oModuleConfig = readConfig(oModuleContext);
+    oModuleContext.SetProperty("config", oModuleConfig);
+}
+
+function loadLibraryComponent(oModuleContext) {
+    var sComponentDirUrl = std.lib.fu.resolve(oModuleContext.meta.module_url, "library");
+    if (std.lib.fu.isNotExistsDir(sComponentDirUrl)) {
+        ams.dist.log.trace("module({1})::library not found, skip loading library component", [oModuleContext.meta.module_key]);
+        return;
+    }
+
+    var sComponentMainUrl = std.lib.fu.resolve(sComponentDirUrl, "component.bs");
+    var oComponentMainLib = OpenCodeLib(sComponentMainUrl);
+
+    var builder = OpenCodeLibrary("../build2/library.bs");
+    CallObjectMethod(oComponentMainLib, "build", [builder]);
+    builder.__execute__(oModuleContext, sComponentDirUrl);
+    
+    ams.dist.log.trace("module({1})::library successfully registered", [oModuleContext.meta.module_key]);
+}
+
+function loadServiceComponent(oModuleContext) {
+    function pullStructure(build) {
+        var obj = {};
+        var sPlainPackageName;
+        for (sPlainPackageName in build.structure) {
+            setDeepStructureLib(obj, sPlainPackageName, build.structure.GetProperty(sPlainPackageName))
+        }
+        return obj;
+    }
+    
+    function setDeepStructureLib(obj, path, value) {
+        var keys = path.split('.');
+        var current = obj;
+        var tmp = current;
+    
+        var key;
+        for (var i = 0; i < keys.length; i++) {
+            key = keys[i];
+    
+            if (i === keys.length - 1) {
+                current.SetProperty(key, value);
+            } else {
+                tmp = current.GetOptProperty(key);
+    
+                if (tmp === undefined) {
+                    tmp = {};
+                    current.SetProperty(key, tmp);
+                } else if (DataType(tmp) !== 'object') {
+                    throw 'wtf'
+                } else if (ObjectType(tmp) !== 'JsObject') {
+                    throw 'Attempt to write to not JsObject'
+                }
+    
+                current = tmp;
+            }
+        }
+    }
+
+
+    var sComponentDirUrl = UrlAppendPath(oModuleContext.meta.module_url, "service");
+    if (!PathIsDirectory(UrlToFilePath(sComponentDirUrl))) {
+        ams.dist.log.trace("module({1})::service not found, skip loading service component", [oModuleContext.meta.module_key]);
+        return;
+    }
+
+    var sComponentMainUrl = UrlAppendPath(sComponentDirUrl, "component.bs");
+    var oComponentMainLib = OpenCodeLib(sComponentMainUrl);
+
+    var build = CallObjectMethod(oComponentMainLib, "build", [AbsoluteUrl(sComponentDirUrl)]);
+
+    var oServiceStructure = pullStructure(build)
+    oModuleContext.SetProperty("service", oServiceStructure)
+    
+    ams.dist.log.trace("module({1})::service successfully registered", [oModuleContext.meta.module_key]);
+}
+
+function loadApiComponent(oModuleContext) {
+    var sComponentDirUrl = std.lib.fu.resolve(oModuleContext.meta.module_url, "api");
+    if (std.lib.fu.isNotExistsDir(sComponentDirUrl)) {
+        ams.dist.log.trace("module({1})::api not found, skip loading api component", [oModuleContext.meta.module_key]);
+        return;
+    }
+    var sComponentMainUrl = std.lib.fu.resolve(sComponentDirUrl, "component.bs");
+    var oComponentMainLib = OpenCodeLib(sComponentMainUrl);
+
+
+    var builder = OpenCodeLibrary("../build2/api.bs");
+    CallObjectMethod(oComponentMainLib, "build", [builder]);
+    builder.__execute__(oModuleContext, sComponentDirUrl);
+    
+    ams.dist.log.trace("module({1})::api successfully registered", [oModuleContext.meta.module_key]);
+}
+
+function loadWebComponent(oModuleContext) {
+    var sComponentDirUrl = std.lib.fu.resolve(oModuleContext.meta.module_url, "web");
+    if (std.lib.fu.isNotExistsDir(sComponentDirUrl)) {
+        ams.dist.log.trace("module({1})::web not found, skip loading web component", [oModuleContext.meta.module_key]);
+        return;
+    }
+    var sComponentMainUrl = std.lib.fu.resolve(sComponentDirUrl, "component.bs");
+    var oComponentMainLib = OpenCodeLib(sComponentMainUrl);
+
+
+    var builder = OpenCodeLibrary("../build2/web.bs");
+    CallObjectMethod(oComponentMainLib, "build", [builder]);
+    builder.__execute__(oModuleContext, sComponentDirUrl);
+    
+    ams.dist.log.trace("module({1})::web successfully registered", [oModuleContext.meta.module_key]);
+}
+
+
+function callOnInstall(oModuleContext) {
+    var sMethodName = "onInstall";
+
+    ams.dist.log.trace("execute {1}()", [sMethodName]);
+
+    // if (_ams.helper.env.moduleIsInstalled(oModuleContext)) {
+    //     ams.dist.log.trace("module already installed, skip executing");
+    //     return;
+    // }
+
+    if (ams.dist.utils.objectNotHasMethod(oModuleContext.meta.module_library, sMethodName)) {
+        ams.dist.log.trace("module.bs has no {1}() method, skip executing", [sMethodName]);
+        return;
+    }
+
+    try {
+        CallObjectMethod(oModuleContext.meta.module_library, sMethodName, []);
+        ams.dist.log.trace("{1}() executed successfully", [sMethodName]);
+    } catch (err) {
+        ams.dist.log.error("{1}() exits with error: {2}", [sMethodName, err]);
+        throw "Failed to " + sMethodName + "()";
+    }
+}
+
+function callOnUninstall(oModuleContext) {
+    var sMethodName = "onUninstall";
+
+    ams.dist.log.trace("execute {1}()", [sMethodName]);
+
+    // if (_ams.helper.env.moduleIsInstalled(oModuleContext)) {
+    //     ams.dist.log.trace("module already installed, skip executing");
+    //     return;
+    // }
+
+    if (ams.dist.utils.objectNotHasMethod(oModuleContext.meta.module_library, sMethodName)) {
+        ams.dist.log.trace("module.bs has no {1}() method, skip executing", [sMethodName]);
+        return;
+    }
+
+    try {
+        CallObjectMethod(oModuleContext.meta.module_library, sMethodName, []);
+        ams.dist.log.trace("{1}() executed successfully", [sMethodName]);
+    } catch (err) {
+        ams.dist.log.error("{1}() exits with error: {2}", [sMethodName, err]);
+        throw "Failed to " + sMethodName + "()";
+    }
+}
+
+function callOnInit(oModuleContext) {
+    var sMethodName = "onInit";
+
+    ams.dist.log.trace("execute {1}()", [sMethodName]);
+
+    if (ams.dist.utils.objectNotHasMethod(oModuleContext.meta.module_library, sMethodName)) {
+        ams.dist.log.trace("module.bs has no {1}() method, skip executing", [sMethodName]);
+        return;
+    }
+
+    try {
+        CallObjectMethod(oModuleContext.meta.module_library, sMethodName, []);
+        ams.dist.log.trace("{1}() executed successfully", [sMethodName]);
+    } catch (err) {
+        ams.dist.log.error("{1}() exits with error: {2}", [sMethodName, err]);
+        throw "Failed to " + sMethodName + "()";
+    }
+}
+
+function lock(oModuleContext) {
+
+}

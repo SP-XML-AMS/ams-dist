@@ -1,0 +1,7 @@
+function handleRequest(request) {
+    ams.dist.web.controller.main.handleRequest(request);
+}
+
+function handleRedirect(request) {
+    ams.dist.web.controller.main.handleRedirect(request);
+}

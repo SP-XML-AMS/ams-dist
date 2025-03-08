@@ -1,0 +1,151 @@
+
+// todo логирование
+function __execute__(oModuleContext, sComponentDirUrl) {
+    var oApiResult = {};
+
+    var sComponentMainUrl = std.lib.fu.resolve(sComponentDirUrl, "main");
+
+    function _libV2HasProperty(obj, sPropertyName) {
+        try {
+            GetObjectProperty(obj, sPropertyName)
+            return true;
+        } catch (err) {
+            return false;
+        }
+    }
+
+    function _openApiCodeLibrary(sFileAbsoluteUrl) {
+        var lv2Library = OpenCodeLibrary(sFileAbsoluteUrl);
+        if (_libV2HasProperty(lv2Library, "api")) {
+            eval("lv2Library.api = oApiResult;");
+        }
+        CallObjectMethod(lv2Library, "__init__", []); // написать в лог если __init__ не существует или с ошибкой
+        return lv2Library;
+    }
+
+    function _loadBsJsFile(oContainer, sFilePath) {
+        if (std.lib.fu.isExistsDir(sFileUrl)) {
+            return;
+        }
+
+        var sFileExtension = std.lib.fu.fileExtension(sFilePath);
+        if (sFileExtension !== ".bs" && sFileExtension !== ".js") {
+            return;
+        }
+
+        var sFileBaseName = std.lib.fu.fileBaseName(sFilePath);
+        oContainer.SetProperty(sFileBaseName, _openApiCodeLibrary(sFilePath));
+    }
+
+
+    function _loadUtils() {
+        var oUtils = {};
+
+        var sUtilsDirUrl = std.lib.fu.resolve(sComponentMainUrl, "utils");
+        if (std.lib.fu.isNotExistsDir(sUtilsDirUrl)) {
+            return;
+        }
+
+        var sarrFileUrls = ReadDirectory(sUtilsDirUrl);
+        var sFileUrl;
+        for (sFileUrl in sarrFileUrls) {
+            _loadBsJsFile(oUtils, sFileUrl);
+        }
+        
+        oApiResult.SetProperty("utils", oUtils);
+    }
+
+    function _loadValidators() {
+        
+    }
+
+    function _loadRepositories() {
+        var oRepositories = {};
+
+        var sRepositoriesDirUrl = std.lib.fu.resolve(sComponentMainUrl, "repositories");
+        if (std.lib.fu.isNotExistsDir(sRepositoriesDirUrl)) {
+            return;
+        }
+
+        var sarrFileUrls = ReadDirectory(sRepositoriesDirUrl);
+        var sFileUrl;
+        for (sFileUrl in sarrFileUrls) {
+            _loadBsJsFile(oRepositories, sFileUrl);
+        }
+        
+        oApiResult.SetProperty("repositories", oRepositories);
+    }
+    
+    function _loadServices() {
+        var oServices = {};
+
+        var sServicesDirUrl = std.lib.fu.resolve(sComponentMainUrl, "services");
+        if (std.lib.fu.isNotExistsDir(sServicesDirUrl)) {
+            return;
+        }
+
+        var sarrFileUrls = ReadDirectory(sServicesDirUrl);
+        var sFileUrl;
+        for (sFileUrl in sarrFileUrls) {
+            _loadBsJsFile(oServices, sFileUrl);
+        }
+        
+        oApiResult.SetProperty("services", oServices);
+    }
+
+    function _loadControllers() {
+        var oarrControllers = [];
+
+        var sControllersDirUrl = std.lib.fu.resolve(sComponentMainUrl, "controllers");
+        if (std.lib.fu.isNotExistsDir(sControllersDirUrl)) {
+            return;
+        }
+
+        function buildEndpointsTrie() {
+            ams.dist.log.trace("register endpoints...", null)
+            var oRoot = ams.dist.web.router.createTrieNode();
+        
+            var lv2Controller;
+            for (lv2Controller in oarrControllers) {
+                pushEndpointsToTrieFromController(lv2Controller, oRoot)
+            }
+    
+            return oRoot;
+        }
+    
+        function pushEndpointsToTrieFromController(lv2Controller) {
+            try {
+                var endpoints = CallObjectMethod(lv2Controller, "endpoints", []);
+                ams.dist.log.trace("collected successfully", null);
+            } catch (err) {
+                ams.dist.log.error("endpoints() exits with error: {1}", [err]);
+                throw "Failed to endpoints()";
+            }
+
+            var endpoint;
+            for (endpoint in endpoints) {
+                ams.dist.web.router.addRoute(oRoot, endpoint, lv2Controller);
+            }
+        }
+
+        var sarrFileUrls = ReadDirectory(sControllersDirUrl);
+        var sFileUrl;
+        for (sFileUrl in sarrFileUrls) {
+            if (std.lib.fu.isExistsDir(sFileUrl)) {
+                // skip
+            } else {
+                oarrControllers.push(_openApiCodeLibrary(sFileUrl))
+            }
+        }
+        
+        var trie = buildEndpointsTrie();
+        oApiResult.SetProperty("endpoints", trie);
+    }
+    
+    _loadUtils()
+    _loadValidators()
+    _loadRepositories()
+    _loadServices()
+    _loadControllers();
+    oModuleContext.SetProperty("api", oApiResult);
+}

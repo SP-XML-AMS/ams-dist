@@ -1,0 +1,137 @@
+function workingDir() {
+    return UrlToFilePath(UrlParent(AbsoluteUrl("dummy")));
+}
+
+function parentDir(sPath) {
+    return ParentDirectory(sPath);
+}
+
+function obtainTempDir() {
+    return ObtainTempDirectoryPath();
+}
+
+function obtainTempFile(sSuffix) {
+    sSuffix = std.lib.require.optString(sSuffix, undefined);
+
+    if (sSuffix === undefined) {
+        return UrlToFilePath(ObtainTempFile());
+    } else {
+        return UrlToFilePath(ObtainTempFile(sSuffix));
+    }
+}
+
+function obtainSessionTempFile(sSuffix) {
+    sSuffix = std.lib.require.optString(sSuffix, undefined);
+
+    if (sSuffix === undefined) {
+        return UrlToFilePath(ObtainSessionTempFile());
+    } else {
+        return UrlToFilePath(ObtainSessionTempFile(sSuffix));
+    }
+}
+
+function resolve(sBasePath, sPath) {
+    return FilePath(sBasePath, sPath);
+}
+
+function isExists(sPath) {
+    return FilePathExists(sPath);
+}
+
+function isNotExists(sPath) {
+    return !isExists(sPath);
+}
+
+function isExistsFile(sPath) {
+    return isExists(sPath) && !IsDirectory(sPath);
+}
+
+function isNotExistsFile(sPath) {
+    return !(isExists(sPath) && !IsDirectory(sPath));
+}
+
+function isExistsDir(sPath) {
+    return isExists(sPath) && IsDirectory(sPath);
+}
+
+function isNotExistsDir(sPath) {
+    return !(isExists(sPath) && IsDirectory(sPath));
+}
+
+function loadAsData(sPath) { // TODO: range
+    return LoadFileData(sPath);
+}
+
+function loadAsText(sPath) {
+    return LoadFileText(sPath);
+}
+
+function putAsData(sPath) { // TODO: range
+    return PutFileData(sPath);
+}
+
+function putAsText(sPath) {
+    return PutFileText(sPath);
+}
+
+function fileName(sPath) {
+    return FileName(sPath);
+}
+
+function fileBaseName(sPath) {
+
+}
+
+function fileExtension(sPath) {
+
+}
+
+function readDir(sDirPath) {
+    return ReadDirectoryByPath(sDirPath);
+}
+
+function copy(sSrcPath, sDstPath) {
+    sSrcPath = std.lib.require.string(sSrcPath);
+    sDstPath = std.lib.require.string(sDstPath);
+
+    // alert("copy from '" + sSrcPath + "' to '" + sDstPath + "'")
+
+    if (isExistsFile(sSrcPath)) {
+        var sParentDir = std.lib.fp.parentDir(sDstPath);
+        // alert(sParentDir)
+        if (std.lib.fp.isNotExistsDir(sParentDir)) {
+            // alert("create parent dir")
+            ObtainDirectory(sParentDir);
+        }
+        CopyFile(sSrcPath, sDstPath);
+    } else if (isExistsDir(sSrcPath)) {
+        if (isNotExistsDir(sDstPath)) {
+            // alert("create dest dir")
+            ObtainDirectory(sDstPath);
+        }
+
+        var sarrFiles = std.lib.fp.readDir(sSrcPath);
+
+        var sFileDest = undefined;
+        var sFile;
+        for (sFile in sarrFiles) {
+            sFileDest = std.lib.fp.resolve(sDstPath, std.lib.fp.fileName(sFile));
+            std.lib.fp.copy(sFile, sFileDest);
+        }
+    } else {
+        throw "No such file."
+    }
+}
+
+function move(sSrcPath, sDstPath) {
+    sSrcPath = std.lib.require.string(sSrcPath);
+    sDstPath = std.lib.require.string(sDstPath);
+
+    MoveFile(sSrcPath, sDstPath);
+}
+
+function createDir(sPath) {
+    sPath = std.lib.require.string(sPath);
+    
+    CreateDirectory(sPath)
+}

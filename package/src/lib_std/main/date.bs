@@ -1,0 +1,118 @@
+function format(dDate, sFormat) {
+    function pad(value, length) {
+        value = String(value);
+        while (StrCharCount(value) < length) {
+            value = '0' + value;
+        }
+        return value;
+    }
+
+    function getQuarter(month) {
+        return std.lib.math.floor((month - 1) / 3) + 1;
+    }
+
+    var year = Year(dDate) // date.getFullYear();
+    var era = year > 0 ? "AD" : "BC";
+    var yearOfEra = std.lib.math.abs(year) // Math.abs(year);
+    var month = Month(dDate) // 1-12 // date.getMonth() + 1; // Месяцы начинаются с 0
+    var dayOfMonth = Day(dDate) // date.getDate();
+    var dayOfYear = std.lib.math.ceil(DateDiff(dDate, OptDate(year, 1, 1)) / 86400) // Math.ceil((date - new Date(year, 0, 1)) / 86400000);
+    var dayOfWeek = WeekDay(dDate) // 0 - Воскресенье, 1 - Понедельник // date.getDay(); // 0 = Sunday, 1 = Monday, ...
+    var hourOfDay = Hour(dDate) // date.getHours();
+    var minute = Minute(dDate) // date.getMinutes();
+    var second = Second(dDate) // date.getSeconds();
+    // var millisecond = date.getMilliseconds();
+    var ampm = hourOfDay >= 12 ? "PM" : "AM";
+    var hour12 = hourOfDay % 12 || 12;
+    var quarter = getQuarter(month);
+
+    // Форматируем строку
+    var formatted = "";
+    var i = 0;
+
+    while (i < pattern.length) {
+        var char = pattern[i];
+        var count = 1;
+
+        // Считаем повторяющиеся символы
+        while (i + 1 < pattern.length && pattern[i + 1] === char) {
+            count++;
+            i++;
+        }
+
+        // Обрабатываем символы формата
+        switch (char) {
+            case 'G': // Era
+                formatted += count >= 4 ? "Anno Domini" : count === 3 ? "AD" : "A";
+                break;
+            case 'y': // Year-of-era
+                formatted += count === 2 ? pad(yearOfEra % 100, 2) : yearOfEra;
+                break;
+            case 'u': // Year
+                formatted += year;
+                break;
+            case 'M': // Month
+                if (count === 1) {
+                    formatted += month;
+                } else if (count === 2) {
+                    formatted += pad(month, 2);
+                } else if (count === 3) {
+                    formatted += ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][month - 1];
+                } else {
+                    formatted += ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][month - 1];
+                }
+                break;
+            case 'd': // Day of month
+                formatted += pad(dayOfMonth, count);
+                break;
+            case 'D': // Day of year
+                formatted += pad(dayOfYear, count);
+                break;
+            case 'Q': // Quarter of year
+                formatted += count >= 3 ? "Q" + quarter : pad(quarter, count);
+                break;
+            case 'E': // Day of week
+                if (count >= 4) {
+                    formatted += ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][dayOfWeek];
+                } else {
+                    formatted += ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][dayOfWeek];
+                }
+                break;
+            case 'a': // AM/PM
+                formatted += ampm;
+                break;
+            case 'H': // Hour of day (0-23)
+                formatted += pad(hourOfDay, count);
+                break;
+            case 'h': // Hour of am-pm (1-12)
+                formatted += pad(hour12, count);
+                break;
+            case 'm': // Minute of hour
+                formatted += pad(minute, count);
+                break;
+            case 's': // Second of minute
+                formatted += pad(second, count);
+                break;
+            // case 'S': // Fraction of second
+            //     formatted += pad(Math.floor(millisecond / Math.pow(10, 3 - count)), count);
+            //     break;
+            default:
+                formatted += char;
+        }
+
+        i++;
+    }
+
+    return formatted;
+}
+
+function parse(sValue, sFormat) {
+    var year = dateParts["yyyy"] || dateParts["yy"] || 1970;
+    var month = (dateParts["MM"] || dateParts["M"] || 1) - 1; // Месяцы в JavaScript начинаются с 0.
+    var day = dateParts["dd"] || dateParts["d"] || 1;
+    var hours = dateParts["HH"] || dateParts["H"] || 0;
+    var minutes = dateParts["mm"] || dateParts["m"] || 0;
+    var seconds = dateParts["ss"] || dateParts["s"] || 0;
+
+    return OptDate(year, month, day, hours, minutes, seconds);
+}

@@ -1,0 +1,21 @@
+function getAll() {
+    return ams.dist.env.lock.module.packages;
+}
+
+function isInstalled(sModuleID) {
+    return ArrayOptFind(ams.dist.env.lock.module.packages, "This.key === sModuleID") !== undefined;
+}
+
+function isNotInstalled(sModuleID) {
+    return ArrayOptFind(ams.dist.env.lock.module.packages, "This.key === sModuleID") === undefined;
+}
+
+function lock(oModuleContext) {
+    
+
+    env.lock.SetProperty("module", std.json.parse(std.fu.loadAsText(sLockFilePath)));
+}
+
+function unlock(oModuleContext) {
+
+}

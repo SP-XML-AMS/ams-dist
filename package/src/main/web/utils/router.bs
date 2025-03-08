@@ -1,0 +1,87 @@
+function createTrieNode() {
+    return {
+        "children": {},
+        "paramName": null
+    }
+}
+
+function addRoute(oRootNode, oEndpoint, l1ApiLib) {
+    var sPattern = oEndpoint.pattern;
+    sPattern = std.lib.str.trim(sPattern, "/");
+    var parts = std.lib.str.split(sPattern, "/");
+
+    var oNode = oRootNode
+
+    var isParam = undefined;
+    var key = undefined;
+    var part;
+    for (part in parts) {
+        isParam = StrBegins(part, ':');
+        key = isParam ? ':param' : part;
+
+        if (!oNode.children.HasProperty(key)) {
+            oNode.children.SetProperty(key, createTrieNode());
+            if (isParam) {
+                oNode.children.GetProperty(key).paramName = StrCharRangePos(part, 1, StrCharCount(part));
+            }
+        }
+        oNode = oNode.children.GetProperty(key);
+    }
+
+    if (oNode.HasProperty(oEndpoint.method)) {
+        throw new Error("Duplicate route");
+    }
+
+    var oHandler = {
+        // библиотека v1 содержащая endpoints
+        "library": l1ApiLib,
+        // название метода в указанной библиотеке
+        "endpoint": oEndpoint
+    }
+
+    oNode.SetProperty(oEndpoint.method, oHandler);
+}
+
+function matchRoute(oRootNode, sUrl, sHttpMethod) {
+    sUrl = std.lib.str.trim(sUrl, "/");
+    var parts = std.lib.str.split(sUrl, "/");
+
+    var node = oRootNode;
+    var params = {};
+
+    var part;
+    for (part in parts) {
+        if (node.children.HasProperty(part)) {
+            node = node.children.GetProperty(part);
+        } else if (node.children.HasProperty(':param')) {
+            node = node.children.GetProperty(':param');
+            params.SetProperty(node.paramName, part);
+        } else {
+            return null; // 404
+        }
+    }
+
+    if (node.HasProperty(sHttpMethod)) {
+        return { "oHandler": (node.GetProperty(sHttpMethod)), "oParams": params };
+    } else {
+        return null; // 405
+    }
+}
+
+function composeCall(oHandler, req, params) {
+    // var oRuleQueryParams = oHandler.GetOptProperty("queryParams", {});
+    // var oRulePathParams = oHandler.GetOptProperty("pathParams", {});
+
+    var body = ams.dist.web.request.body.main.parse(req);
+
+    return {
+        "rawRequest": req,
+        "pathParams": params,
+        "queryParams": {},
+        "body": body
+    }
+}
+
+function callHandler(oHandler, oCall) {
+    return CallObjectMethod(oHandler.library, oHandler.endpoint.handler, [oCall]);
+}

@@ -1,0 +1,37 @@
+function create(sBaseUrl) {
+    return {
+        'DEBUG': "api.build." + Random(10000000, 99999999),
+        'base': sBaseUrl,
+        'structure': {},
+        'endpoints': []
+    }
+}
+
+function loadEndpoints(cbuild, sLibPath) {
+    var sLibUrl = UrlAppendPath(cbuild.base, sLibPath);
+    // alert("sLibUrl = " + sLibUrl);
+
+    var oCodeLib = OpenCodeLib(sLibUrl);
+    cbuild.endpoints.push(oCodeLib)
+}
+
+function loadPackage(cbuild, sPackagePath) {
+    if (IsAbsoluteUrlStr(sPackagePath)) {
+        var sPackageUrl = sPackagePath
+    } else {
+        var sPackageUrl = UrlAppendPath(cbuild.base, sPackagePath);
+    }
+    
+    var sarrFileUrls = ReadDirectory(sPackageUrl);
+
+    var oCodeLib = undefined;
+    var sFileUrl; // for
+    for (sFileUrl in sarrFileUrls) {
+        if (std.lib.fu.isExistsDir(sFileUrl)) {
+            loadPackage(cbuild, sFileUrl);
+        } else {
+            oCodeLib = OpenCodeLib(sFileUrl);
+            cbuild.endpoints.push(oCodeLib);
+        }
+    }
+}

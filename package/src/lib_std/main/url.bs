@@ -1,0 +1,14 @@
+function encode(sData) {
+    return UrlEncode(sData);
+}
+
+function decode(sData) {
+    return UrlDecode(sData);
+}
+
+function appendPath(sBase, sPath) {
+    sBase = std.lib.require.string(sBase);
+    sPath = std.lib.require.string(sPath);
+
+    return UrlAppendPath(sBase, sPath);
+}

@@ -1,0 +1,28 @@
+function handle(request, urlData) {
+    if (urlData.parts.length !== 2) {
+        ams.dist.web.error.respondWithMessage("Unknown drop location: '{1}'.", [urlData.path], 404);
+    }
+
+    var sLocation = urlData.parts[1];
+    if (sLocation === "all") {
+        all()
+    } else if (sLocation === "web") {
+        web()
+    }
+}
+
+function all() {
+    ams.dist.init();
+    ams.dist.log.debug("DROP AMS");
+}
+
+function web() {
+    ams.dist.loadWeb();
+    ams.dist.log.debug("DROP AMS/WEB");
+}
+
+// dist
+// web
+// module
+// std
+// all

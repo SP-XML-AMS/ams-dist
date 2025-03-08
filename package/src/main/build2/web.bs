@@ -1,0 +1,9 @@
+var webHandler = null;
+
+function __execute__(oModuleContext, sComponentDirUrl) {
+    var oWebResult = {}
+
+    oWebResult.SetProperty("webHandler", webHandler);
+
+    oModuleContext.SetProperty("web", oWebResult);
+}

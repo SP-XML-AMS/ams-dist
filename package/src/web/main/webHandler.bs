@@ -1,0 +1,5 @@
+function getDefaultSpa() {
+    var instance = OpenCodeLibrary("webHandlers/spaWebHandler.bs");
+    instance.__init__();
+    return instance;
+}

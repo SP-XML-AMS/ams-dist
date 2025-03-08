@@ -1,0 +1,83 @@
+function handle(request, reqData) {
+    var curModuleWeb = reqData.curModule.GetOptProperty("web");
+    if (curModuleWeb === undefined) {
+        ams.dist.web.error.respondWithMessage("module({1})::web component not provided.", [reqData.sModuleName], 404);
+    }
+
+    alert("web1")
+    var call = {
+        "rawRequest": request,
+        "virtual_url": reqData.sVirtualUrlPath,
+        "prefix_url": reqData.sPrefixUrlPath
+    };
+    curModuleWeb.webHandler.handle(call);
+    alert("web2")
+
+    // var sFullQualifiedUrl = UrlAppendPath(curModuleWeb.config.rootDir, reqData.sVirtualUrlPath);
+
+    // if (UrlExists(sFullQualifiedUrl)) {
+    //     if (_applyCache(request, sFullQualifiedUrl)) {
+    //         return;
+    //     }
+
+    //     request.RespContentType = UrlStdContentType(sFullQualifiedUrl);
+    //     request.RespStream.WriteBinary(_loadAnyFile(sFullQualifiedUrl));
+    // } else if (curModuleWeb.config.GetOptProperty("sapMode", false)) {
+    //     var sIndexPath = UrlAppendPath(curModuleWeb.config.rootDir, "index.html");
+
+    //     if (_applyCache(request, sIndexPath)) {
+    //         return;
+    //     }
+
+    //     var baseUrl = (ams.dist.config.request_handler_url + "/" + reqData.sPrefixUrlPath + "/");
+    //     var injectBaseUrl = curModuleWeb.config.GetOptProperty("injectBaseUrl", false);
+
+    //     request.RespContentType = "text/html";
+    //     request.RespStream.WriteBinary(_loadHtmlFile(sIndexPath, baseUrl, injectBaseUrl));
+    // } else {
+    //     ams.dist.web.error.respondWithMessage("File '{1}' not found.", [sFullQualifiedUrl], 404);
+    // }
+}
+
+function _applyCache(request, sFileUrl) {
+    var modified = UrlModDate(sFileUrl);
+    request.AddRespHeader("Cache-Control", "no-cache", true);
+    request.AddRespHeader("Last-Modified", StrMimeDate(modified), true);
+
+    var since = request.Header.GetOptProperty("If-Modified-Since");
+    if (since !== undefined) {
+        since = ParseMimeDate(since);
+
+        if (modified === since) {
+            request.SetRespStatus(304, "Not Modified");
+            return true;
+        }
+    }
+}
+
+function _loadAnyFile(filePath) {
+    var content = LoadUrlData(filePath);
+
+    var binary = new Binary();
+    binary.AssignStr(content);
+    
+    return binary;
+}
+
+function injectBase(filePath, baseUrl) {
+    var binIndexPage = _loadAnyFile(filePath)
+
+    var sIndexPage = binIndexPage.GetStr();
+    sIndexPage = '<base href="' + baseUrl + '" id="ams-base-url" />\n' + sIndexPage;
+    binIndexPage.AssignStr(sIndexPage);
+
+    return binIndexPage;
+}
+
+function _loadHtmlFile(filePath, baseUrl, falg) {
+    if (falg) {
+        return injectBase(filePath, baseUrl)
+    } else {
+        return _loadAnyFile(filePath)
+    }
+}

@@ -1,0 +1,154 @@
+// ams-dist
+
+/**
+ * {
+ *   "sPackageFileUrl": str  // 
+ *   "sLocationDirUrl": str  //
+ *   "sPackageDirUrl": str   //
+ *   "bForceInstall": bool
+ * 
+ *   "s_packageDirUrl": str   //
+ *   "s_locationDirUrl": str  //
+ * 
+ *   "s_packageDataDirUrl": str  //
+ * }
+ * @param oParams 
+ * @returns 
+ */
+function main(oParams) {
+    try {
+        if (!FileExists(oParams.s_locationDirUrl)) {
+            ObtainDirectory(oParams.s_locationDirUrl);
+        } else if (!IsDirectory(oParams.s_locationDirUrl)) {
+            withFail("location is not a directory");
+        }
+    
+        oParams.s_packageDataDirUrl = UrlAppendPath(oParams.s_packageDirUrl, 'package');
+
+        // unzipPackage(oParams);
+        installPackage(oParams);
+        lockPackage(oParams);
+
+        return ok(undefined);
+    } catch (err) {
+        return parseError(err);
+    }
+}
+
+function installPackage(oParams) {
+    installDist(oParams);
+    setLoadDist(oParams);
+}
+
+function lockPackage(oParams) {
+    var s_lockFileUrl = UrlAppendPath(oParams.s_locationDirUrl, 'lock-ams.json');
+
+    var s_packageConfigFileUrl = UrlAppendPath(oParams.s_packageDirUrl, 'config.json');
+    var o_packageConfig;
+    try {
+        o_packageConfig = ParseJson(LoadUrlData(s_packageConfigFileUrl));
+    } catch (err) {
+        withFail('Invalid package config.json: ' + err.message)
+    }
+    
+    
+    var lock;
+    try {
+        lock = ParseJson(LoadFileText(s_lockFileUrl));
+    } catch (err) {
+        lock = {}
+    }
+
+    if (lock.HasProperty('packages')) {
+        lock.GetProperty('packages').push(o_packageConfig);
+    } else {
+        lock.SetProperty('packages', [o_packageConfig]);
+    }
+
+    PutUrlText(s_lockFileUrl, EncodeJson(lock));
+}
+
+function installDist(oParams) {
+    var s_packageConfigFileUrl = UrlAppendPath(oParams.s_packageDirUrl, 'config.json');
+    var o_packageConfig;
+    var s_packageVersion;
+    try {
+        o_packageConfig = ParseJson(LoadUrlData(s_packageConfigFileUrl));
+        s_packageVersion = o_packageConfig['version'];
+    } catch (err) {
+        withFail('Invalid package config.json: ' + err.message)
+    }
+
+    var s_sourceUrl = oParams.s_packageDataDirUrl;
+    var s_destinationUrl = UrlAppendPath(UrlAppendPath(oParams.s_locationDirUrl, 'dists'), ('dist_v' + s_packageVersion));
+    
+    oParams.s_distDirUrl = s_destinationUrl;
+
+    var s_sourceDirPath = UrlToFilePath(s_sourceUrl);
+    var s_destinationDirPath = UrlToFilePath(s_destinationUrl);
+
+    copyAnyFile(s_sourceDirPath, s_destinationDirPath);
+}
+
+function copyAnyFile(sSrcPath, sDstPath) {
+    if (IsDirectory(sSrcPath)) {
+        ObtainDirectory(sDstPath, true);
+
+        var sarrFiles = ReadDirectoryByPath(sSrcPath);
+
+        var sFileDest = undefined;
+        var sFile;
+        for (sFile in sarrFiles) {
+            sFileDest = FilePath(sDstPath, FileName(sFile));
+            copyAnyFile(sFile, sFileDest);
+        }
+    } else if (FilePathExists(sSrcPath)) {
+        ObtainDirectory(ParentDirectory(sDstPath), true);
+        CopyFile(sSrcPath, sDstPath);
+    } else {
+        throw "No such file.";
+    }
+}
+
+function setLoadDist(oParams) {
+    var s_amsConfigFileUrl = UrlAppendPath(oParams.s_locationDirUrl, 'config.json');
+
+    try {
+        var o_amsConfig = ParseJson(LoadUrlText(s_amsConfigFileUrl));
+        o_amsConfig.SetProperty('load_dist', UrlFileName(oParams.s_distDirUrl))
+        PutUrlText(s_amsConfigFileUrl, EncodeJson(o_amsConfig));
+    } catch (err) {
+        withFail(err)
+    }
+}
+
+function ok(value) {
+    return { "error": false, "value": value };
+}
+
+function fail(message) {
+    return { "error": true, "message": (message + '') };
+}
+
+function withFail(message) {
+    throw EncodeJson(fail(message));
+}
+
+function parseError(err) {
+    try {
+        return ParseJson(err.message);
+    } catch (_) {
+        return fail(err);
+    }
+}
+
+var result = main({
+    's_packageDirUrl': 'x-local://wt/check_installer/tmp/ams-dist',
+    's_locationDirUrl': 'x-local://wt/ams333'
+})
+
+if (result.error) {
+    alert("error: " + result.message)
+} else {
+    alert(1)
+}

@@ -1,0 +1,69 @@
+var sRootDirUrl = null;
+
+function handle(call) {
+    var sVirtualUrlPath = call.virtual_url;
+    var sPrefixUrlPath = call.prefix_url;
+    var request = call.rawRequest;
+
+    var sFullQualifiedUrl = UrlAppendPath(sRootDirUrl, sVirtualUrlPath);
+
+    if (std.lib.fu.isExistsFile(sFullQualifiedUrl) && sVirtualUrlPath !== "index.html") {
+        if (_applyCache(request, sFullQualifiedUrl)) {
+            return;
+        }
+
+        request.RespContentType = UrlStdContentType(sFullQualifiedUrl);
+        request.RespStream.WriteBinary(_loadAnyFile(sFullQualifiedUrl));
+    } else {
+        var sIndexPath = UrlAppendPath(sRootDirUrl, "index.html");
+
+        if (_applyCache(request, sIndexPath)) {
+            return;
+        }
+        var user = tools_web.user_init(request, {});
+
+        var baseUrl = (ams.dist.config.request_handler_url + "/" + sPrefixUrlPath + "/");
+        request.RespContentType = "text/html";
+        request.RespStream.WriteBinary(_loadHtmlFile(sIndexPath, baseUrl, user));
+    }
+}
+
+function _applyCache(request, sFileUrl) {
+    var dFileModified = UrlModDate(sFileUrl);
+    request.AddRespHeader("Cache-Control", "no-cache", true);
+    request.AddRespHeader("Last-Modified", StrMimeDate(dFileModified), true);
+
+    var since = request.Header.GetOptProperty("If-Modified-Since");
+    if (since !== undefined) {
+        since = ParseMimeDate(since);
+
+        if (dFileModified === since) {
+            request.SetRespStatus(304, "Not Modified");
+            return true;
+        }
+    }
+}
+
+function _loadAnyFile(filePath) {
+    var content = LoadUrlData(filePath);
+
+    var binary = new Binary();
+    binary.AssignStr(content);
+    
+    return binary;
+}
+
+function _loadHtmlFile(filePath, sBaseUrl, user) {
+    var content = LoadUrlData(filePath);
+    content = '<base href="' + sBaseUrl + '" id="ams-base-url" />\n' + content;
+    content += "<script>" + EncodeJson(user) + "</script>"
+
+    var binary = new Binary();
+    binary.AssignStr(content);
+    
+    return binary;
+}
+
+function __init__() {
+
+}

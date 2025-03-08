@@ -1,0 +1,5 @@
+var webHandler = null;
+
+function init() {
+    webHandler = OpenCodeLibrary("main/webHandler.bs")
+}

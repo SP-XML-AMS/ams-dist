@@ -1,0 +1,74 @@
+var module = null;
+
+function installModule(sArchiveUrl) {
+    var sTempPath = std.lib.fp.obtainTempDir();
+    std.lib.zip.extract(sArchiveUrl, sTempPath);
+    var sarrFilePaths = std.lib.fp.readDir(sTempPath);
+
+    var sModuleTempPath = std.lib.array.first(sarrFilePaths);
+    std.lib.require.assert(std.lib.fp.isExistsDir(sModuleTempPath), "Module dir not found.");
+    var sModuleID = ams.fp.fileName(sModuleTempPath);
+    var sModuleDestPath = ams.fp.resolve(ams.env.paths.modules, sModuleID);
+
+    std.lib.fp.copy(sModuleTempPath, sModuleDestPath);
+    var sModuleUrl = ams.fu.pathToUrl(sModuleDestPath);
+
+    loadModule(sModuleID, sModuleUrl);
+    var oModuleContext = getModule(sModuleID);
+
+    module.callOnInstall(oModuleContext);
+    module.lock(oModuleContext);
+}
+
+function uninstallModule(sModuleID) {
+    var oModuleContext = getModule(sModuleID);
+
+    module.callOnUninstall(oModuleContext);
+    module.unlock(oModuleContext);
+
+    unloadModule(sModuleID);
+}
+
+function loadModule(sModuleID, sModuleUrl) {
+    var oContainer = ams.dist.module;
+
+    try {
+        ams.dist.log.info("module({1}) from '{2}' registering...", [sModuleID, sModuleUrl]);
+
+        var oModuleContext = module.createContext(sModuleUrl, sModuleID);
+    
+        module.open(oModuleContext);
+    
+        module.loadLibraryComponent(oModuleContext);
+        module.loadApiComponent(oModuleContext);
+        module.loadWebComponent(oModuleContext);
+
+        module.callOnInit(oModuleContext);
+    
+        oContainer.SetProperty(sModuleID, oModuleContext);
+
+        ams.dist.log.info("module({1}) successfully registered.", [sModuleID]);
+    } catch (err) {
+        ams.dist.log.error("module({1}) could not be registered due to an error: {2}", [sModuleID, err]);
+    }
+}
+
+function unloadModule(sModuleID) {
+    var oContainer = ams.dist.module;
+
+    oContainer.SetProperty(sModuleID, undefined);
+    // TODO: unload module library with libloader
+}
+
+function getModule(sModuleKey) {
+    var module = ams.dist.module.GetOptProperty(sModuleKey);
+    if (module === undefined) {
+        throw "Module not provided.";
+    }
+    return module;
+}
+
+
+function init() {
+    module = OpenCodeLibrary("module.bs");
+}

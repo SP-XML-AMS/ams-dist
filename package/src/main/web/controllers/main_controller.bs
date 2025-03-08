@@ -1,0 +1,81 @@
+function handleRequest(request) {
+    var sUrlPath = _getRelativePath(request);
+    sUrlPath = std.lib.str.trim(sUrlPath, "/");
+    var sUrlPathParts = std.lib.str.split(sUrlPath, "/");
+
+    var reqData = {
+        "path": sUrlPath,
+        "parts": sUrlPathParts
+    }
+
+    var sControllerMode = sUrlPathParts[0];
+    reqData.SetProperty("mode", sUrlPathParts[0]);
+
+    // alert('ams request: ' + sUrlPath);
+    try {
+        var auth = _authData(request);
+        if (auth === null) {
+            return;
+        }
+
+        if (sControllerMode === "module") {
+            ams.dist.web.controller.module.handle(request, reqData);
+        } else if (sControllerMode === "drop") {
+            ams.dist.web.controller.drop.handle(request, reqData);
+        } else {
+            ams.dist.web.error.respondWithMessage("Unknown mode: '{1}'.", [sControllerMode], 404);
+        }
+    } catch (err) {
+        alert(err)
+        var ams_web_error = ams.dist.web.error.parse(err);
+        request.RespContentType = "text/html";
+        request.RespStream.WriteStr(EvalCodePageUrl(std.lib.fu.resolve(ams.dist.env.dist_dir_url, "main/web/static/error.html")));
+    }
+}
+
+function handleRedirect(request) {
+    if (ams.dist.web.redirects.HasProperty(request.UrlPath)) {
+        request.AddRespHeader("Location", ams.dist.web.redirects.GetProperty(request.UrlPath), true);
+        request.SetRespStatus(301, "");
+    }
+
+    request.SetRespStatus(404, "")
+}
+
+
+function _getRelativePath(request) {
+    var iHandlerUrlLength = StrCharCount(ams.dist.config.request_handler_url);
+    var iRequestUrlLength = StrCharCount(request.UrlPath);
+    return StrCharRangePos(request.UrlPath, iHandlerUrlLength, iRequestUrlLength);
+}
+
+function _authData(request) {
+    oUserInit = tools_web.user_init(request, {});
+    // oUserInit = tools_web.user_init(request, request.Query);
+    if (oUserInit.access) {
+        Env = request.Session.GetOptProperty("Env", ({}));
+
+        curUserID = Env.GetOptProperty('curUserID', null);
+        curUser = Env.GetOptProperty('curUser', null);
+
+        curHostName = Env.GetOptProperty('curHostName', '');
+        curHostPath = Env.GetOptProperty('curHostPath', '');
+
+        curAnonymousAccess = Env.GetOptProperty('curAnonymousAccess', false);
+
+        curHostID = Env.GetOptProperty("curHostID", null);
+        curSiteID = Env.GetOptProperty("curSiteID", null);
+
+        curHost = oUserInit.curHost;
+        curSite = oUserInit.curSite;
+
+        curEnvUrl = oUserInit.curEnvUrl;
+
+        return {};
+    } else {
+        request.RespContentType = "application/binary";
+        request.SetRespStatus(404, "");
+
+        return null;
+    }
+}

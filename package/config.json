@@ -1,0 +1,8 @@
+{
+    "requirements": {
+        "env/os": "any",
+        "env/db": "any",
+        "env/app": "wshcm",
+        "require/ams-wrapper": "any"
+    }
+}
